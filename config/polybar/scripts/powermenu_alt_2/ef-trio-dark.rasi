@@ -1,0 +1,10 @@
+/* Theme: Ef-Trio-Dark (Default) */
+* {
+    background:     #160f0f;
+    background-alt: #2a2228;
+    foreground:     #d8cfd5;
+    selected:       #6a294f;
+    selected-fg:    #ffdfdf;
+    active:         #60b444;
+    urgent:         #f48359;
+}

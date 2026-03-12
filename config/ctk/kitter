@@ -1,0 +1,264 @@
+#!/bin/bash
+function print_help() {
+  _name=${0##*/}
+  STATUS_CODE="${1:-0}"
+  
+  # Colores (ANSI escape codes)
+  local RESET="\033[0m"
+  local BOLD="\033[1m"
+  local CYAN="\033[36m"
+  local YELLOW="\033[33m"
+  local GREEN="\033[32m"
+  local BLUE="\033[34m"
+  local MAGENTA="\033[35m"
+  
+  USAGE="""
+${BOLD}${YELLOW}USAGE:${RESET}
+  ${GREEN}${_name}${RESET} [OPTIONS] [ARGUMENTS]
+
+${BOLD}${YELLOW}OPTIONS:${RESET}
+  ${BLUE}--font-size${RESET}          Set font size (1..∞)
+  ${BLUE}--background-opacity${RESET} Set background opacity (0.0 - 1.0)
+  ${BLUE}--background-color${RESET}   Set background color (e.g. #1a1b26)
+  ${BLUE}--foreground-color${RESET}   Set foreground color (e.g. #a9b1d6)
+  ${BLUE}--font-family${RESET}        Set font family (e.g. 'Hack Nerd Font')
+  ${BLUE}--load-config${RESET}        Load configuration from file (e.g. /path/to/config)
+  ${BLUE}--tab-style${RESET}          Set tab style (angled, slanted, round)
+  ${BLUE}--catppuccin-theme${RESET}   Set catppuccin theme (latte, frappe, macchiato, mocha)
+
+
+${BOLD}${YELLOW}EXAMPLES:${RESET}
+  ${GREEN}${_name}${RESET} ${MAGENTA}--font-size 12 --background-opacity 0.8
+  ${GREEN}${_name}${RESET} ${MAGENTA}--load-config ${HOME}/.config/terminal_settings.conf
+  """
+
+  echo -e "$USAGE"
+  exit "$STATUS_CODE"
+}
+CONFIG="$HOME/.config/kitty/kitty.conf"
+KITTY="/opt/kitty/bin/kitty"
+KITTEN="/opt/kitty/bin/kitten"
+
+function get_sockets(){
+  SOCKET_PREFIX=$(grep -oP "listen_on unix:\K.*" "${CONFIG}")
+
+  if [[ "${SOCKET_PREFIX}" ]]; then
+    find /tmp -type s -path "${SOCKET_PREFIX}*" -user "${USER}" 2>/dev/null 
+  fi 
+}
+
+function changue_font_size(){
+
+  font_size="${1}"
+
+  if [[ -z "$font_size" ]]; then
+    echo -e "\n\e[4;31m[-] The option: --font-size requires an argument!"
+    print_help 1 
+  fi
+
+  SOCKETS=$(get_sockets)
+
+  for SOCKET in ${SOCKETS}; do
+     "${KITTY}" @ --to unix:${SOCKET} set-font-size "${font_size}" & 
+  done
+  
+}
+
+function changue_background_opacity(){
+
+  background_opacity="${1}"
+
+  if [[ -z "$background_opacity" ]]; then
+    echo -e "\n\e[4;31m[-] The option: --background-opacity requires an argument!"
+    print_help 1 
+  fi
+
+  SOCKETS=$(get_sockets)
+
+  for SOCKET in ${SOCKETS}; do
+    "${KITTY}" @ --to unix:${SOCKET} set-background-opacity "$background_opacity" &
+  done
+
+}
+
+function set_foreground_color(){
+
+  foreground_color="${1}"
+
+  if [[ -z "$foreground_color" ]]; then
+    echo -e "\n\e[4;31m[-] The option: --foreground-color requires an argument!"
+    print_help 1 
+  fi
+
+  SOCKETS=$(get_sockets)
+
+  for SOCKET in ${SOCKETS}; do
+    "${KITTY}" @ --to unix:${SOCKET} set-colors foreground="$foreground_color" &
+  done
+
+}
+
+function changue_color_background(){
+  color="${1}"
+
+  if [[ -z "$color" ]]; then
+    echo -e "\n\e[4;31m[-] The option: --background-color requires an argument!"
+    print_help 1 
+  fi
+
+  SOCKETS=$(get_sockets)
+
+  for SOCKET in ${SOCKETS}; do
+    "${KITTY}" @ --to unix:${SOCKET} set-colors --configured background="$color" &
+  done
+
+}
+
+function set_font_family(){
+  font_family="${1}"
+
+  # "${KITTEN}" @ --to unix:/tmp/kitty-global-1354  load-config ${HOME}.config/kitty/kitty.conf
+  
+  if [[ -z $font_family ]]; then
+    echo -e "\n\e[4;31m[-] The option --font-family requires an argument!"
+    print_help 1
+  fi 
+
+  SOCKETS=$(get_sockets)
+  
+  if [[ "$SOCKETS" ]]; then 
+    sed -i "s/^font_family .*/font_family $font_family/" ${HOME}.config/kitty/kitty.conf
+  fi
+
+  for SOCKET in ${SOCKETS}; do  
+    "${KITTEN}" @ --to unix:${SOCKET}  load-config ${HOME}.config/kitty/kitty.conf & 
+  done
+}
+
+function load_config(){
+  SOCKET="${KITTY_LISTEN_ON}"
+  FILE="${1}"
+  ALL_SOCKETS="${2}"
+
+  if [[ -z "${FILE}" ]]; then
+    echo -e "\n\e[4;31m[-] The option --load-config requires an argument but given 0!"
+
+    print_help "1"
+  fi
+
+  if [[ ! -f "${FILE}" ]]; then
+    echo -e "\n\e[4;31m[!] No such file: ${FILE}"
+    exit 1 
+  fi 
+
+
+  if [[ -z "${KITTY_PID}" ]]; then
+    echo -e "\n\e[4;31m[!] Maybe you haven't the remote control enabled."
+    exit 1 
+  fi 
+
+  if [[ "${ALL_SOCKETS}" == '--all-sockets' ]]; then
+    SOCKETS=$(get_sockets)
+
+    for SOCKET in ${SOCKETS}; do  
+      "${KITTEN}" @ --to unix:${SOCKET}  load-config ${FILE} & 
+    done
+  else
+    "${KITTEN}" @ --to ${SOCKET} load-config "${FILE}" & 
+  fi
+  
+}
+
+set_tab_style(){
+  tab_style="${1:?This function requires an argument!}"
+  tab_style="${tab_style,,}"
+
+  styles_accepted=("angled" "slanted" "round")
+
+  if [[ ! " ${styles_accepted[*]} " =~ " $tab_style " ]]; then
+    echo -e "\n\e[4;31m[-] Fatal error, style \"$tab_style\" is not accepted in this momment!"
+
+    print_help "1"
+  fi
+
+  out="$(grep -oP '^(?!#)tab_powerline_style (\S+)' "${CONFIG}")"
+  out="${out:?Fatal error, out is not defined or is null}"  
+
+  style_config="$(cut -d ' ' -f2 <<< "$out")"
+
+  if [[ "${style_config}" == "${tab_style}" ]]; then
+    echo -e "\n[+] Tab Style it's equal! Returns..."
+    return 0
+  fi 
+
+  sed -i "s|tab_powerline_style $style_config|tab_powerline_style $tab_style|" "${CONFIG}"
+
+  load_config "${CONFIG}" --all-sockets
+
+}
+
+function set_theme(){
+  local theme="${1}"
+  ALL_SOCKETS="${2}"
+
+  if [[ "${ALL_SOCKETS}" == "--all-sockets" ]]; then 
+    ALL_SOCKETS=true 
+  fi 
+
+  
+  if [[ -z "${theme}" ]]; then
+
+    echo -e "\n\e[4;31m[-] The option --catppuccin-theme requires an argument but given 0!"
+    print_help "1"
+
+  fi
+
+  declare -A themes=(
+    ["latte"]="${HOME}/.config/kitty/themes/latte.conf"
+    ["frappe"]="${HOME}/.config/kitty/themes/frappe.conf" 
+    ["macchiato"]="${HOME}/.config/kitty/themes/macchiato.conf"
+    ["mocha"]="${HOME}/.config/kitty/themes/mocha.conf"
+  )
+  
+  theme_target=$(echo "${themes["${theme}"]}")
+
+  if [[ -z "${theme_target}" ]]; then 
+    echo -e "\n\e[4;31m[-] Fatal error, the theme ${theme} was not found!"
+    exit 1 
+  fi 
+
+  [[ ! -f "${theme_target}" ]] && exit 1 
+  
+  if [[ "${ALL_SOCKETS}" == true ]]; then 
+  
+    while IFS= read -r socket; do
+      kitty @ --to "unix:$socket" set-colors --all "$theme_target" 2>/dev/null >&1 & 
+    done < <(get_sockets)
+    exit 1 
+  fi 
+
+  kitty @ set-colors --all "${theme_target}"
+  exit 1 
+
+}
+
+if [[ ! "$#" -gt 0 ]]; then
+  print_help
+fi
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --font-size) changue_font_size "$2"; shift ;;
+        --background-opacity) changue_background_opacity "$2"; shift ;;
+        --background-color) changue_color_background "$2"; shift ;; 
+        --foreground-color) set_foreground_color "$2"; shift ;;
+        --font-family) set_font_family "$2"; shift ;;
+        --all-sockets) ALL_SOCKETS=true; ;;  
+        --load-config) load_config "$2" "${3}"; shift ;;
+        --tab-style) set_tab_style "$2"; shift ;;
+        --catppuccin-theme) set_theme "${2}" "${3}"; shift;; 
+        --help) print_help; ;; 
+        *) echo "Unknown parameter: $1"; print_help 1 ;;
+    esac
+    shift
+done
