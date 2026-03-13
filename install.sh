@@ -20,7 +20,7 @@ spinner_log() {
   ((${#points[@]} < len)) && len="${#points[@]}"
 
   local i=0
-  while kill -0 "${pid}" &>/dev/null; do
+  while kill -0 "${pid}" 2>/dev/null; do
     local value="${values[i]}"
     local point="${points[i]}"
     echo -ne "\r\033[K${bright_cyan}[${value}]${end} ${msg}${bright_white}${point}${end}"
@@ -28,7 +28,10 @@ spinner_log() {
     ((i = (i + 1) % len))
   done
 
+  local exit_code=$?
+  tput cnorm
   echo -ne "\r\033[K"
+  return $exit_code
 }
 
 welcome() {
@@ -94,8 +97,8 @@ set_time() {
 
 system_update() {
   (
-    sudo apt update -y &>/dev/null &&
-      sudo apt upgrade -y &>/dev/null
+    apt update -y &>/dev/null &&
+      apt upgrade -y &>/dev/null
   ) &
   PID=$!
   spinner_log "${bright_yellow}Actualizando el sistema esto podria toma un tiempo${end}" "0.2" "${PID}"
@@ -104,5 +107,24 @@ system_update() {
   set_time 1 "${bright_blue}El sistema se actualizo de forma exitosa${end}"
 }
 
+brew() {
+  if ! command -v brew &>/dev/null; then
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" &>/dev/null
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >>~/.zshrc
+    sudo apt-get install build-essential procps curl file git
+  fi
+  local progrmas_a_instalar=(
+    "lazydocker" "lazygit" "neovim" "lsd" "rustcat"
+    "zsh" "zsh-autosuggestions" "zsh-syntax-highlighting" "zsh-completions"
+    "uv" "eza" "superfile" "fnm" "zoxide" "btop"
+  )
+  if [[ ${#progrmas_a_instalar[@]} -gt 0 ]]; then
+    brew install --formula "${progrmas_a_instalar}" &>/dev/null
+    set_time 1 "${bright_blue}Se instalaron todos los paquetes con brew ${end}"
+  fi
+}
+
 welcome
 system_update
+brew
