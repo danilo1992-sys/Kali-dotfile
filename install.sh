@@ -451,7 +451,7 @@ magick() {
       libfreetype6-dev libxml2-dev libtiff-dev libwebp-dev \
       libfontconfig1-dev libopenexr-dev libltdl-dev git -y &>/dev/null
 
-    wget https://imagemagick.org/archive/ImageMagick.tar.gz &>/dev/null
+    sudo wget https://imagemagick.org/archive/ImageMagick.tar.gz &>/dev/null
     tar xvzf ImageMagick.tar.gz &>/dev/null
     cd ImageMagick-* || return 1
 
