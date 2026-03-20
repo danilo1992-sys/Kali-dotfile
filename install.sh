@@ -553,7 +553,7 @@ gnome_install() {
 config() {
   local config=("bat" "bspwm" "ctk" "dunst" "eww" "fastfetch"
     "gtk-3.0" "jgmenu" "kitty" "lazydocker" "lazygit" "nvim" "polybar"
-    "powerlevel10k" "rofi" "sxhkd" "zsh" "zsh-sudo" "zsh-autosuggestions" "superfile")
+    "powerlevel10k" "rofi" "sxhkd" "zsh" "zsh-sudo" "zsh-autosuggestions" "superfile" "scripts")
   for conf in "${config[@]}"; do
     if [ -d "${HOME}/.config/$conf" ]; then
       ln -sf "${HOME}/.config/$conf" "/root/.config/$conf"
