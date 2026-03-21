@@ -100,14 +100,14 @@ function messagebox() {
     local def_bg=""
     local to_end_tty=false
 
-    while [[ "${1}" ]]; do 
-      case "${1}" in 
-        -title) title_raw="${2}"; shift 2 ;;
-        -message) content="${2}"; shift 2 ;;
-        -type) type="${2}"; shift 2 ;;
+    while [[ "${1:-}" ]]; do
+      case "${1}" in
+        -title) title_raw="${2:-}"; shift 2 ;;
+        -message) content="${2:-}"; shift 2 ;;
+        -type) type="${2:-}"; shift 2 ;;
         -no-preffix) no_prefix=true; shift 1 ;;
-        -bg) def_bg="${2}"; shift 2 ;; 
-        -max-width) max_width="${2}"; shift 2 ;;
+        -bg) def_bg="${2:-}"; shift 2 ;;
+        -max-width) max_width="${2:-}"; shift 2 ;;
         -to-end-tty|--to-end-tty) to_end_tty=true; shift 1 ;;
         *) shift ;;
       esac 

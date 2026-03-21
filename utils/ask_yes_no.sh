@@ -23,12 +23,12 @@ ask_yes_no() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -message|--message)
-                message="$2"; shift 2;;
+                message="${2:-}"; shift 2;;
             -options|--options)
-                IFS=',' read -ra options <<< "$2"; shift 2;;
-            -selected-bg|--selected-bg) SELECTED_BG="${2}"; shift 2;;
-            -unselected-bg|--unselected-bg) UNSELECTED_BG="${2}"; shift 2;; 
-            -fg|--fg) FG="${2}"; shift 2;; 
+                IFS=',' read -ra options <<< "${2:-}"; shift 2;;
+            -selected-bg|--selected-bg) SELECTED_BG="${2:-}"; shift 2;;
+            -unselected-bg|--unselected-bg) UNSELECTED_BG="${2:-}"; shift 2;;
+            -fg|--fg) FG="${2:-}"; shift 2;; 
             *) shift;;
         esac
     done
