@@ -67,7 +67,7 @@ apt_update() {
 elapsed_time() {
   local secs=$1
   local msg=$2
-  if (( secs < 60 )); then
+  if ((secs < 60)); then
     log_success "${msg} (${secs}s)"
   else
     local mins=$(awk -v s="$secs" 'BEGIN { printf "%.1f", s / 60 }')
@@ -80,7 +80,7 @@ check_disk_space() {
   local available_kb
   available_kb=$(df --output=avail / | tail -1 | tr -d ' ')
   local available_mb=$((available_kb / 1024))
-  if (( available_mb < required_mb )); then
+  if ((available_mb < required_mb)); then
     log_error "Espacio insuficiente: ${available_mb}MB disponibles, se necesitan ${required_mb}MB"
     return 1
   fi
@@ -106,7 +106,7 @@ preflight_checks() {
   check_disk_space 8192
 
   if [[ -z "${LOG_FILE}" ]]; then :; fi
-  : > "${LOG_FILE}"
+  : >"${LOG_FILE}"
 
   log_success "Verificaciones previas completadas"
 }
@@ -118,7 +118,7 @@ preflight_checks() {
 welcome() {
   clear
   printf "${bright_blue}"
-  cat << 'EOF'
+  cat <<'EOF'
     ..............
         ..,;:ccc,.
       ......''';lxO.
@@ -169,65 +169,81 @@ select_components() {
   read -r mode
 
   case "${mode:-1}" in
-    1)
-      INSTALL_ALL=true
-      INSTALL_EWW=true
-      INSTALL_PICOM=true
-      INSTALL_MAGICK=true
-      ;;
-    2)
-      INSTALL_ALL=false
-      INSTALL_EWW=false
-      INSTALL_PICOM=false
-      INSTALL_MAGICK=false
-      ;;
-    3)
-      INSTALL_ALL=false
-      local comps=("bspwm" "sxhkd" "polybar" "picom" "eww" "rofi" "fonts" "magick" "zsh" "gnome" "brew" "htb")
-      printf "\n${bright_white}Componentes disponibles:${end}\n"
-      for i in "${!comps[@]}"; do
-        printf "  ${bright_green}%d.${end} %s\n" $((i+1)) "${comps[$i]}"
-      done
-      printf "${bright_cyan}▶${end} Números separados por coma (ej: 1,2,3,5): "
-      read -r selections
+  1)
+    INSTALL_ALL=true
+    INSTALL_EWW=true
+    INSTALL_PICOM=true
+    INSTALL_MAGICK=true
+    ;;
+  2)
+    INSTALL_ALL=false
+    INSTALL_EWW=false
+    INSTALL_PICOM=false
+    INSTALL_MAGICK=false
+    ;;
+  3)
+    INSTALL_ALL=false
+    local comps=("bspwm" "sxhkd" "polybar" "picom" "eww" "rofi" "fonts" "magick" "zsh" "gnome" "brew" "htb")
+    printf "\n${bright_white}Componentes disponibles:${end}\n"
+    for i in "${!comps[@]}"; do
+      printf "  ${bright_green}%d.${end} %s\n" $((i + 1)) "${comps[$i]}"
+    done
+    printf "${bright_cyan}▶${end} Números separados por coma (ej: 1,2,3,5): "
+    read -r selections
 
-      INSTALL_BSPWM=false; INSTALL_SXHKD=false; INSTALL_POLYBAR=false
-      INSTALL_PICOM=false; INSTALL_EWW=false; INSTALL_ROFI=false
-      INSTALL_FONTS=false; INSTALL_MAGICK=false; INSTALL_ZSH=false
-      INSTALL_GNOME=false; INSTALL_BREW=false; INSTALL_HTB=false
+    INSTALL_BSPWM=false
+    INSTALL_SXHKD=false
+    INSTALL_POLYBAR=false
+    INSTALL_PICOM=false
+    INSTALL_EWW=false
+    INSTALL_ROFI=false
+    INSTALL_FONTS=false
+    INSTALL_MAGICK=false
+    INSTALL_ZSH=false
+    INSTALL_GNOME=false
+    INSTALL_BREW=false
+    INSTALL_HTB=false
 
-      IFS=',' read -ra selected <<< "$selections"
-      for sel in "${selected[@]}"; do
-        sel=$(echo "$sel" | tr -d ' ')
-        case "$sel" in
-          1) INSTALL_BSPWM=true ;;
-          2) INSTALL_SXHKD=true ;;
-          3) INSTALL_POLYBAR=true ;;
-          4) INSTALL_PICOM=true ;;
-          5) INSTALL_EWW=true ;;
-          6) INSTALL_ROFI=true ;;
-          7) INSTALL_FONTS=true ;;
-          8) INSTALL_MAGICK=true ;;
-          9) INSTALL_ZSH=true ;;
-          10) INSTALL_GNOME=true ;;
-          11) INSTALL_BREW=true ;;
-          12) INSTALL_HTB=true ;;
-        esac
-      done
-      ;;
-    *)
-      INSTALL_ALL=true
-      INSTALL_EWW=true
-      INSTALL_PICOM=true
-      INSTALL_MAGICK=true
-      ;;
+    IFS=',' read -ra selected <<<"$selections"
+    for sel in "${selected[@]}"; do
+      sel=$(echo "$sel" | tr -d ' ')
+      case "$sel" in
+      1) INSTALL_BSPWM=true ;;
+      2) INSTALL_SXHKD=true ;;
+      3) INSTALL_POLYBAR=true ;;
+      4) INSTALL_PICOM=true ;;
+      5) INSTALL_EWW=true ;;
+      6) INSTALL_ROFI=true ;;
+      7) INSTALL_FONTS=true ;;
+      8) INSTALL_MAGICK=true ;;
+      9) INSTALL_ZSH=true ;;
+      10) INSTALL_GNOME=true ;;
+      11) INSTALL_BREW=true ;;
+      12) INSTALL_HTB=true ;;
+      esac
+    done
+    ;;
+  *)
+    INSTALL_ALL=true
+    INSTALL_EWW=true
+    INSTALL_PICOM=true
+    INSTALL_MAGICK=true
+    ;;
   esac
 
   if [[ "${INSTALL_ALL:-true}" == true ]]; then
-    INSTALL_BSPWM=true; INSTALL_SXHKD=true; INSTALL_POLYBAR=true
-    INSTALL_PICOM=true; INSTALL_EWW=true; INSTALL_ROFI=true
-    INSTALL_FONTS=true; INSTALL_MAGICK=true; INSTALL_ZSH=true
-    INSTALL_GNOME=true; INSTALL_BREW=true; INSTALL_HTB=true
+    INSTALL_BSPWM=true
+    INSTALL_SXHKD=true
+    INSTALL_POLYBAR=true
+    INSTALL_PICOM=true
+    INSTALL_EWW=true
+    INSTALL_ROFI=true
+    INSTALL_FONTS=true
+    INSTALL_MAGICK=true
+    INSTALL_ZSH=true
+    INSTALL_GNOME=true
+    INSTALL_BREW=true
+    INSTALL_HTB=true
   fi
 }
 
@@ -238,8 +254,15 @@ select_components() {
 system_update() {
   SECONDS=0
   log_info "Actualizando el sistema..."
-  ( apt_update && run_as_root apt upgrade -y >>"${LOG_FILE}" 2>&1 ) &
-  spinner "Actualizando el sistema..." 0.2 $!
+
+  DEBIAN_FRONTEND=noninteractive run_as_root apt update -y >>"${LOG_FILE}" 2>&1 &
+  spinner "Ejecutando apt update..." 0.2 $!
+  wait $!
+
+  DEBIAN_FRONTEND=noninteractive run_as_root apt upgrade -y >>"${LOG_FILE}" 2>&1 &
+  spinner "Ejecutando apt upgrade..." 0.2 $!
+  wait $!
+
   elapsed_time "$SECONDS" "Sistema actualizado"
 }
 
@@ -264,7 +287,7 @@ install_brew() {
     fi
 
     local brew_env='eval "$($(brew --prefix)/bin/brew shellenv)"'
-    grep -qxF "$brew_env" ~/.zshrc 2>/dev/null || echo "$brew_env" >> ~/.zshrc
+    grep -qxF "$brew_env" ~/.zshrc 2>/dev/null || echo "$brew_env" >>~/.zshrc
   fi
 
   if command -v brew &>/dev/null; then
@@ -273,7 +296,7 @@ install_brew() {
       "zsh" "zsh-autosuggestions" "zsh-syntax-highlighting" "zsh-completions"
       "uv" "eza" "superfile" "fnm" "zoxide" "btop" "fastfetch" "powerlevel10k"
     )
-    ( brew install --formula "${packages[@]}" >>"${LOG_FILE}" 2>&1 ) &
+    (brew install --formula "${packages[@]}" >>"${LOG_FILE}" 2>&1) &
     spinner "Instalando paquetes con Homebrew..." 0.2 $!
     elapsed_time "$SECONDS" "Homebrew y paquetes instalados"
   else
@@ -820,7 +843,7 @@ generate_wallpapers() {
 
 show_summary() {
   printf "\n${bright_green}"
-  cat << 'EOF'
+  cat <<'EOF'
   ╔══════════════════════════════════════════╗
   ║     ¡INSTALACIÓN COMPLETADA!             ║
   ╚══════════════════════════════════════════╝
