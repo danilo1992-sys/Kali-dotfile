@@ -13,8 +13,6 @@ readonly DISTRO="Kali"
 
 # Colores
 source "${SCRIPT_DIR}/Colors"
-source "${SCRIPT_DIR}/utils/ask_yes_no.sh"
-source "${SCRIPT_DIR}/utils/messagebox.sh"
 
 # ─────────────────────────────────────────────
 # Utilidades
@@ -143,25 +141,16 @@ welcome() {
                                             .'
                                              .
 EOF
-  printf "${end}"
+  printf "${end}\n"
 
-  msg="""
- ${bright_green}•${end} ${bright_white}Instala entorno \e[1;36mbspwm + gnome\e[0m\e[97m para Kali Linux
- ${bright_green}•${end} ${bright_white}Componentes: \033[48;5;236meww\e[0m\e[97m, \033[48;5;236mpolybar\e[0m\e[97m, \033[48;5;236msxhkd\e[0m\e[97m, \033[48;5;236mrofi\e[0m\e[97m
- ${bright_green}•${end} ${bright_white}Shell: \e[1;36mzsh\e[0m\e[97m | Terminal: \e[1;36mkitty\e[0m\e[97m
- ${bright_green}•${end} ${bright_white}Log: ${bright_cyan}${LOG_FILE}${end}"
-  messagebox -title " Bienvenido " -message "${msg}" -no-preffix
+  printf "${bright_green}•${end} ${bright_white}Instala entorno bspwm + gnome para Kali Linux${end}\n"
+  printf "${bright_green}•${end} ${bright_white}Componentes: eww, polybar, sxhkd, rofi${end}\n"
+  printf "${bright_green}•${end} ${bright_white}Shell: zsh | Terminal: kitty${end}\n"
+  printf "${bright_green}•${end} ${bright_white}Log: ${bright_cyan}${LOG_FILE}${end}\n\n"
 
-  local confirm
-  confirm=$(
-    ask_yes_no \
-      -options "Si,No" \
-      -message "¿Deseas continuar con la instalación?" \
-      -selected-bg "\e[45m" \
-      -unselected-bg "\e[100m" \
-      -fg "\e[97m"
-  )
-  if [[ ! "${confirm}" =~ ^[YySs] ]]; then
+  printf "${bright_yellow}¿Deseas continuar con la instalación?${end} ${bright_magenta}[Y/n]${end} "
+  read -r confirm
+  if [[ "${confirm}" =~ ^[Nn] ]]; then
     printf "\n${bright_red}▌ Operación cancelada por ${USER}${end}\n" >&2
     exit 1
   fi
@@ -172,17 +161,14 @@ EOF
 # ─────────────────────────────────────────────
 
 select_components() {
-  msg="""
- ${bright_white}Selecciona qué instalar:${end}
- ${bright_green}1.${end} Todo (instalación completa)
- ${bright_green}2.${end} Solo configuraciones (sin compilación desde fuente)
- ${bright_green}3.${end} Personalizado"
-  messagebox -title " Modo de instalación " -message "${msg}" -no-preffix
-
-  printf "${bright_cyan}▶${end} Selecciona modo [1/2/3]: "
+  printf "\n${bright_white}Selecciona modo de instalación:${end}\n"
+  printf "  ${bright_green}1.${end} Todo (instalación completa)\n"
+  printf "  ${bright_green}2.${end} Solo configuraciones (sin compilación desde fuente)\n"
+  printf "  ${bright_green}3.${end} Personalizado\n\n"
+  printf "${bright_cyan}▶${end} Selecciona modo [1/2/3] (default: 1): "
   read -r mode
 
-  case "$mode" in
+  case "${mode:-1}" in
     1)
       INSTALL_ALL=true
       INSTALL_EWW=true
